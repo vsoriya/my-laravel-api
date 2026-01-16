@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Post;
 use \Illuminate\Support\Facades\Auth;
+use App\Models\Category;
 
 class PostController extends Controller
 {
@@ -21,13 +22,20 @@ class PostController extends Controller
      */
     public function store(Request $request)
     {
+        $request->validate([
+            'title' => 'required|string|max:255',   
+            'content' => 'required|string',
+            'category_id' => 'required|exists:categories,id',
+            'user_id' => 'nullable|exists:users,id',
+        ]);
+        
         $post = Post::create([
             'title' => $request->title,
             'content' => $request->input('content'),
-            'user_id'     => $request->user_id ?? Auth::id() ?? 1,
+            'user_id'     => Auth::id() ?? $request->user_id ?? 1,
             'category_id' => $request->category_id 
         ]);
-        return response()->json($post->load('user', 'category'), 201);
+        return response()->json($post->load('user', 'category', 'comments','likes'), 201);
     }
 
     /**
@@ -36,7 +44,14 @@ class PostController extends Controller
      */
     public function show(string $id)
     {
-        //
+        
+        $post = Post::with(['user', 'category', 'comments.user', 'likes'])->find($id);
+
+        if (!$post) {
+            return response()->json(['message' => 'Not found'], 404);
+        }
+
+        return response()->json($post, 200);
     }
 
     /**

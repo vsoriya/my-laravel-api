@@ -20,6 +20,11 @@ class LikeController extends Controller
      */
     public function store(Request $request)
     {
+        $request->validate([
+            'post_id' => 'required|exists:posts,id',
+            'user_id' => 'required|exists:users,id',
+        ]);
+        
         $existingLike =  Like::where('post_id', $request->post_id)
             ->where('user_id', $request->user_id)
             ->first();
